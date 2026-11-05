@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шифратор Ален</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            resize: vertical;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-encode {
+            background-color: black;
+            color: white;
+        }
+        .btn-encode:hover { color: gray; }
+        .btn-decode {
+            background-color: black;
+            color: white;
+        }
+        .btn-decode:hover { color: gray; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Шифратор Ален (испанский)</h1>
+    
+    <label for="input">Исходный текст:</label>
+    <textarea id="input"></textarea>
+    
+    <div class="buttons">
+        <button class="btn-encode" onclick="processText(true)">Зашифровать</button>
+        <button class="btn-decode" onclick="processText(false)">Расшифровать</button>
+    </div>
+    
+    <label for="output">Результат:</label>
+    <textarea id="output"></textarea>
+</div>
+
+<script>
+    // 1. Создаем карту замен (Алфавит соответствий)
+    // Ключ — оригинальный символ, значение — на что меняем.
+    const dictionary = {
+        'a': '@', 'b': '☻', 'c': '♡', 'd': '♢', 'e': '♧', 
+        'f': '♤', 'g': '•', 'h': '◘', 'i': '○', 'j': '◙',
+        'k': '♂', 'l': '♀', 'm': '♪', 'n': '♫', 'ñ': '☼',
+        'o': '►', 'p': '◄', 'q': '⇅', 'r': '!!', 's': '¶',
+        't': '§', 'u': '▬', 'v': '↨', 'w': '↑', 'x': '↓',
+        'y': '→', 'z': '←'
+        // Добавьте сюда любые свои символы по аналогии
+    };
+
+    // Создаем обратный словарь для расшифровки
+    const reverseDictionary = {};
+    for (let key in dictionary) {
+        reverseDictionary[dictionary[key]] = key;
+    }
+
+    // 2. Функция обработки текста
+    function processText(isEncoding) {
+        const inputText = document.getElementById('input').value;
+        const currentDict = isEncoding ? dictionary : reverseDictionary;
+        
+        let result = '';
+
+        if (isEncoding) {
+            // Посимвольное шифрование
+            for (let char of inputText) {
+                const lowerChar = char.toLowerCase();
+                if (currentDict[lowerChar] !== undefined) {
+                    // Сохраняем регистр, если это возможно
+                    const replaced = currentDict[lowerChar];
+                    result += (char === char.toUpperCase() && isNaN(char)) ? replaced.toUpperCase() : replaced;
+                } else {
+                    result += char; // Если символа нет в словаре, оставляем как есть
+                }
+            }
+        } else {
+            // Расшифровка (сложнее, так как заменяющие токены могут быть длиннее 1 символа, например 'zh')
+            let tempText = inputText;
+            // Сортируем ключи по длине, чтобы сначала заменялись длинные последовательности (например, 'zh' перед 'z')
+            const sortedKeys = Object.keys(currentDict).sort((a, b) => b.length - a.length);
+            
+            for (let key of sortedKeys) {
+                // Заменяем все вхождения зашифрованного символа на оригинальный
+                // Используем регулярное выражение с флагом 'g' (global) для замены всех совпадений
+                const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'); // Экранирование спецсимволов
+                const regex = new RegExp(escapedKey, 'gi');
+                tempText = tempText.replace(regex, (match) => {
+                    const original = currentDict[key];
+                    return (match === match.toUpperCase()) ? original.toUpperCase() : original;
+                });
+            }
+            result = tempText;
+        }
+
+        // Выводим результат в нижнее окно
+        document.getElementById('output').value = result;
+    }
+</script>
+
+</body>
+</html>
